@@ -15,7 +15,23 @@ def get_db():
     finally:
         db.close()
 
+@router.get("/admin/engineer/{engineer_id}")
+def get_engineer_details(engineer_id: str, db: Session = Depends(get_db)):
+    engineer = db.query(Engineer).filter(Engineer.id == engineer_id).first()
 
+    if not engineer:
+        raise HTTPException(status_code=404, detail="Engineer not found")
+
+    user = db.query(User).filter(User.id == engineer.user_id).first()
+
+    return {
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone,
+        "address": engineer.address,
+        "portfolio_image": engineer.portfolio_image,
+        "services_completed": engineer.services_completed
+    }
 # ✅ STEP 4 — GET ENGINEER PROFILE
 @router.get("/profile")
 def get_engineer_profile(
