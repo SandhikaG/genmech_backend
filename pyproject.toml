@@ -1,0 +1,21 @@
+[project]
+name = "genmech-backend"
+version = "0.1.0"
+description = "Genmech Service Management Backend"
+requires-python = ">=3.9"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "python-dotenv",
+    "passlib[bcrypt]==1.7.4",
+    "python-jose",
+    "pydantic[email]",
+    "pydantic-settings",
+    "bcrypt==3.2.2",
+    "python-multipart>=0.0.20",
+]
+[tool.uv]
+dev-dependencies = []
