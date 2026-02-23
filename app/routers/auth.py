@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.user import UserCreate, UserLogin
 from app.schemas.user import ForgotPasswordRequest
 from app.core.security import hash_password
+from app.models.engineer import Engineer
 from app.core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter()
@@ -27,6 +28,12 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    # 🔥 AUTO CREATE ENGINEER PROFILE
+    if new_user.role == "engineer":
+        engineer_profile = Engineer(user_id=new_user.id)
+        db.add(engineer_profile)
+        db.commit()
+
 
     return {"message": "User created successfully"}
 
