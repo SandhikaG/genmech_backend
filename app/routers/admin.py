@@ -7,6 +7,7 @@ from app.models.service_assignment import ServiceAssignment
 from app.db.database import get_db
 from app.core.security import get_current_user # or wherever yours is
 from app.schemas.user import AssignServiceSchema
+from app.models.company import Company
 
 router = APIRouter()
 
@@ -38,20 +39,24 @@ def admin_dashboard(
             for e in engineers
         ]
     }
-@router.post("/assign-service")
-def assign_service(data: AssignServiceSchema, db: Session = Depends(get_db)):
 
+@router.post("/assign-service")
+def assign_service(
+    data: AssignServiceSchema,
+    current_user: User = Depends(admin_required),
+    db: Session = Depends(get_db)
+):
     new_assignment = ServiceAssignment(
-        engineer_user_id=data.engineer_user_id,
-        company_name=data.company_name,
-        service_name=data.service_name
-    )
+    engineer_user_id=data.engineer_user_id,
+    company_id=data.company_id,
+    service_name=data.service_name
+)
 
     db.add(new_assignment)
     db.commit()
-    db.refresh(new_assignment)
 
     return {"message": "Service assigned successfully"}
+
 @router.get("/engineers")
 def list_engineers(
     db: Session = Depends(get_db),
@@ -78,14 +83,31 @@ def get_all_services(
 
     for service in services:
         user = db.query(User).filter(User.id == service.engineer_user_id).first()
+        company = db.query(Company).filter(Company.id == service.company_id).first()
 
         result.append({
             "service_id": service.id,
             "engineer_name": user.full_name if user else "Unknown",
             "engineer_email": user.email if user else "Unknown",
-            "company_name": service.company_name,
+            "company_name": company.company_name if company else "Unknown",
             "service_name": service.service_name,
             "status": service.status
         })
 
     return result
+
+
+@router.get("/companies")
+def get_companies(
+    current_user: User = Depends(admin_required),
+    db: Session = Depends(get_db)
+):
+    companies = db.query(Company).all()
+
+    return [
+        {
+            "id": c.id,
+            "company_name": c.company_name
+        }
+        for c in companies
+    ]

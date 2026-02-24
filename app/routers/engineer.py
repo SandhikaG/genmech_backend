@@ -5,7 +5,7 @@ from app.models.engineer import Engineer
 from app.models.user import User
 from app.core.security import get_current_user
 from app.models.service_assignment import ServiceAssignment
-
+from app.models.company import Company
 router = APIRouter(prefix="/engineer", tags=["Engineer"])
 
 
@@ -129,3 +129,36 @@ def update_service_status(service_id: str,
     db.commit()
 
     return {"message": "Status updated"}
+
+@router.get("/service/{service_id}/form")
+def get_service_form_data(
+    service_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    service = db.query(ServiceAssignment).filter(
+        ServiceAssignment.id == service_id,
+        ServiceAssignment.engineer_user_id == current_user.id
+    ).first()
+
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    company = db.query(Company).filter(
+        Company.id == service.company_id
+    ).first()
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    return {
+        "company_name": company.company_name,
+        "company_email": company.company_email,
+        "company_phone": company.company_phone,
+        "company_address": company.company_address,
+        "service_name": service.service_name,
+        "engineer_name": current_user.full_name,
+        "engineer_email": current_user.email,
+        "engineer_phone": current_user.phone
+    }

@@ -27,7 +27,8 @@ class UserResponse(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
     new_password: str
+
 class AssignServiceSchema(BaseModel):
-    engineer_user_id: UUID
-    company_name: str
+    engineer_user_id:int
+    company_id: int
     service_name: str
