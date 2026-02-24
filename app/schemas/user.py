@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from uuid import UUID
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -26,3 +27,7 @@ class UserResponse(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
     new_password: str
+class AssignServiceSchema(BaseModel):
+    engineer_user_id: UUID
+    company_name: str
+    service_name: str

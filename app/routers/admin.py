@@ -1,9 +1,14 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
 from app.core.security import admin_required, get_db
 from app.models.user import User
+from app.models.service_assignment import ServiceAssignment
+from app.db.database import get_db
+from app.core.security import get_current_user # or wherever yours is
+from app.schemas.user import AssignServiceSchema
+
+router = APIRouter()
 
 router = APIRouter(
     prefix="/admin",
@@ -33,7 +38,20 @@ def admin_dashboard(
             for e in engineers
         ]
     }
+@router.post("/assign-service")
+def assign_service(data: AssignServiceSchema, db: Session = Depends(get_db)):
 
+    new_assignment = ServiceAssignment(
+        engineer_user_id=data.engineer_user_id,
+        company_name=data.company_name,
+        service_name=data.service_name
+    )
+
+    db.add(new_assignment)
+    db.commit()
+    db.refresh(new_assignment)
+
+    return {"message": "Service assigned successfully"}
 @router.get("/engineers")
 def list_engineers(
     db: Session = Depends(get_db),
@@ -44,3 +62,30 @@ def list_engineers(
         .all()
 
     return engineers
+
+@router.get("/services")
+def get_all_services(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    services = db.query(ServiceAssignment).all()
+
+    result = []
+
+    for service in services:
+        user = db.query(User).filter(User.id == service.engineer_user_id).first()
+
+        result.append({
+            "service_id": service.id,
+            "engineer_name": user.full_name if user else "Unknown",
+            "engineer_email": user.email if user else "Unknown",
+            "company_name": service.company_name,
+            "service_name": service.service_name,
+            "status": service.status
+        })
+
+    return result
